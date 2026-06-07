@@ -101,16 +101,16 @@ for l in range(ALTURA):
     linha_texto = ""
     for c in range(LARGURA):
         if [l, c] == st.session_state.cobrinha[0]:
-            linha_texto += "O"  # Cabeça da cobrinha (Letra O maiúscula)
+            linha_texto += "O"  # Cabeça
         elif [l, c] in st.session_state.cobrinha:
-            linha_texto += "#"  # Corpo da cobrinha (Cerquilha/Hashtag)
+            linha_texto += "#"  # Corpo
         elif [l, c] == st.session_state.comida:
-            linha_texto += "X"  # Comida (Letra X maiúscula)
+            linha_texto += "X"  # Comida
         else:
-            linha_texto += "."  # Espaço vazio (Ponto final)
+            linha_texto += "."  # Vazio
     tabuleiro_visual += linha_texto + "\n"
 
-# Mostra o tabuleiro dentro da caixinha preta com alinhamento perfeito
+# Mostra o tabuleiro dentro da caixinha preta
 st.markdown(f"<div class='tabuleiro'>{tabuleiro_visual}</div>", unsafe_allow_html=True)
 
 st.write(" ")
@@ -137,4 +137,8 @@ if st.session_state.fim_de_jogo:
     st.error("💥 FIM DE JOGO!")
     if st.button("Reiniciar Jogo 🔄"):
         st.session_state.cobrinha = [[7, 7], [7, 8], [7, 9]]
-        st.session_state.direcao = "C
+        st.session_state.direcao = "CIMA"
+        st.session_state.comida = [3, 3]
+        st.session_state.pontos = 0
+        st.session_state.fim_de_jogo = False
+        st.rerun()
