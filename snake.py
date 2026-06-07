@@ -6,12 +6,24 @@ import streamlit.components.v1 as components
 # --- CONFIGURAÇÃO DA TELA ---
 st.set_page_config(page_title="Jogo da Cobrinha 🐍", page_icon="🐍", layout="centered")
 
-# CSS para travar a rolagem da página quando apertar as setas do teclado
+# CSS para travar a rolagem da página e ajustar as fontes
 st.markdown(
     """
     <style>
     html, body, [data-testid="stAppViewContainer"] {
         overflow: hidden; /* Trava a rolagem da página */
+    }
+    .tabuleiro {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 24px;
+        line-height: 1.0;
+        letter-spacing: 2px;
+        text-align: center;
+        white-space: pre;
+        background-color: #111;
+        padding: 10px;
+        border-radius: 5px;
+        color: #fff;
     }
     </style>
     """,
@@ -24,8 +36,8 @@ st.title("🐍 Jogo da Cobrinha")
 st_autorefresh(interval=250, key="game_loop")
 
 # Tamanho do tabuleiro
-LARGURA = 15
-ALTURA = 15
+LARGURA = 16
+ALTURA = 16
 
 # --- INICIALIZAÇÃO DO JOGO ---
 if "cobrinha" not in st.session_state:
@@ -36,14 +48,13 @@ if "cobrinha" not in st.session_state:
     st.session_state.fim_de_jogo = False
 
 # --- CAPTURA DE TECLAS DO TECLADO (COMPUTADOR) ---
-# Esse script impede o navegador de rolar a página com as setas e muda a direção do jogo
 components.html(
     f"""
     <script>
     const doc = window.parent.document;
     doc.onkeydown = function(e) {{
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].indexOf(e.key) > -1) {{
-            e.preventDefault(); // Impede a página de se mexer!
+            e.preventDefault();
         }}
         if (e.key === 'ArrowUp' && '{st.session_state.direcao}' !== 'BAIXO') window.parent.postMessage({{type: 'DIR', value: 'CIMA'}}, '*');
         if (e.key === 'ArrowDown' && '{st.session_state.direcao}' !== 'CIMA') window.parent.postMessage({{type: 'DIR', value: 'BAIXO'}}, '*');
@@ -54,10 +65,6 @@ components.html(
     """,
     height=0
 )
-
-# Captura a mensagem enviada pelo JavaScript acima
-if "direcao_nova" in st.session_state:
-    st.session_state.direcao = st.session_state.direcao_nova
 
 # --- LÓGICA DO MOVIMENTO ---
 if not st.session_state.fim_de_jogo:
@@ -88,8 +95,27 @@ if not st.session_state.fim_de_jogo:
 # --- PLACAR ---
 st.write(f"### Pontuação: **{st.session_state.pontos}**")
 
+# --- DESENHAR O TABULEIRO ALINHADO ---
+tabuleiro_visual = ""
+for l in range(ALTURA):
+    linha_texto = ""
+    for c in range(LARGURA):
+        if [l, c] == st.session_state.cobrinha[0]:
+            linha_texto += "O"  # Cabeça da cobrinha (Letra O maiúscula)
+        elif [l, c] in st.session_state.cobrinha:
+            linha_texto += "#"  # Corpo da cobrinha (Cerquilha/Hashtag)
+        elif [l, c] == st.session_state.comida:
+            linha_texto += "X"  # Comida (Letra X maiúscula)
+        else:
+            linha_texto += "."  # Espaço vazio (Ponto final)
+    tabuleiro_visual += linha_texto + "\n"
+
+# Mostra o tabuleiro dentro da caixinha preta com alinhamento perfeito
+st.markdown(f"<div class='tabuleiro'>{tabuleiro_visual}</div>", unsafe_allow_html=True)
+
+st.write(" ")
+
 # --- CONTROLES VISUAIS (BONS PARA CELULAR) ---
-# Organizados em formato de cruz para não empurrar a tela
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if st.button("🔼 Cima", use_container_width=True): st.session_state.direcao = "CIMA"
@@ -98,7 +124,7 @@ col4, col5, col6 = st.columns([1, 2, 1])
 with col4:
     if st.button("◀️ Esquerda", use_container_width=True): st.session_state.direcao = "ESQUERDA"
 with col5:
-    st.write("") # Espaço em branco no meio
+    st.write("") 
 with col6:
     if st.button("▶️ Direita", use_container_width=True): st.session_state.direcao = "DIREITA"
 
@@ -106,33 +132,9 @@ col7, col8, col9 = st.columns([1, 2, 1])
 with col8:
     if st.button("🔽 Baixo", use_container_width=True): st.session_state.direcao = "BAIXO"
 
-st.write("---")
-
-# --- DESENHAR O TABULEIRO ---
-tabuleiro_visual = ""
-for l in range(ALTURA):
-    linha_texto = ""
-    for c in range(LARGURA):
-        if [l, c] == st.session_state.cobrinha[0]:
-            linha_texto += "🟢"
-        elif [l, c] in st.session_state.cobrinha:
-            linha_texto += "🟩"
-        elif [l, c] == st.session_state.comida:
-            linha_texto += "🍎"
-        else:
-            linha_texto += "⬜"
-    tabuleiro_visual += linha_texto + "\n"
-
-# Mostra o tabuleiro sem deixar as linhas se separarem
-st.markdown(f"<div style='font-size:22px; font-family: monospace; letter-spacing: 0px; line-height: 1.1; text-align: center;'>{tabuleiro_visual}</div>", unsafe_allow_html=True)
-
 # --- TELA DE GAME OVER ---
 if st.session_state.fim_de_jogo:
     st.error("💥 FIM DE JOGO!")
     if st.button("Reiniciar Jogo 🔄"):
         st.session_state.cobrinha = [[7, 7], [7, 8], [7, 9]]
-        st.session_state.direcao = "CIMA"
-        st.session_state.comida = [3, 3]
-        st.session_state.pontos = 0
-        st.session_state.fim_de_jogo = False
-        st.rerun()
+        st.session_state.direcao = "C
